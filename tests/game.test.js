@@ -14,6 +14,8 @@ import {
   pause,
   step,
   tickInterval,
+  resolveDifficulty,
+  DIFFICULTIES,
 } from '../src/game.js';
 
 // Générateur « aléatoire » déterministe : toujours la première case libre.
@@ -178,4 +180,22 @@ test('les fonctions ne modifient jamais l’état reçu', () => {
   step(queueDirection(s, 'up'), first);
   togglePause(s);
   assert.deepEqual(s, snapshot);
+});
+
+test('difficulté : rapide = vitesse ×1,5, extrême = ×3 par rapport au normal', () => {
+  for (const score of [0, 7, 1000]) {
+    const normal = tickInterval(score, 'normal');
+    assert.equal(tickInterval(score), normal);
+    assert.equal(tickInterval(score, 'fast'), normal / 1.5);
+    assert.equal(tickInterval(score, 'extreme'), normal / 3);
+  }
+  assert.deepEqual(Object.keys(DIFFICULTIES), ['normal', 'fast', 'extreme']);
+});
+
+test('difficulté inconnue → normale', () => {
+  for (const v of [null, undefined, '', 'toString', '__proto__', 'impossible', 3]) {
+    assert.equal(resolveDifficulty(v), 'normal');
+    assert.equal(tickInterval(0, v), BASE_INTERVAL);
+  }
+  assert.equal(resolveDifficulty('extreme'), 'extreme');
 });

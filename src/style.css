@@ -190,8 +190,48 @@ canvas {
 .btn:hover { transform: translateY(-1px); }
 .btn:active { transform: translateY(1px); }
 
+/* Réglages de l'overlay : difficulté + langue */
+.settings {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 14px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setting select,
+.chip-btn {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.setting select:hover,
+.chip-btn:hover { border-color: var(--green-dark); }
+
+.setting select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn:focus-visible,
-.icon-btn:focus-visible {
+.icon-btn:focus-visible,
+.setting select:focus-visible,
+.chip-btn:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }

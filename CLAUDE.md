@@ -16,9 +16,11 @@
 
 - `src/game.js` : logique pure (état, déplacement, collisions, pommes). Aucun accès au DOM,
   aléatoire injecté → entièrement testable sous Node.
-- `src/main.js` : rendu canvas, boucle de jeu, entrées clavier / tactile, localStorage.
+- `src/main.js` : rendu canvas, boucle de jeu, entrées clavier / tactile, localStorage (record, langue, difficulté).
+- `src/i18n.js` : textes FR / EN, module pur. Tout texte visible passe par `t()` ou un attribut `data-i18n`.
+- `src/sound.js` : sons synthétisés (Web Audio API), aucun fichier audio.
 - `src/index.html`, `src/style.css` : interface (aucun script ni style inline, à cause de la CSP).
-- `tests/game.test.js` : tests `node:test`, sans dépendance.
+- `tests/*.test.js` : tests `node:test`, sans dépendance (logique du jeu, traductions).
 - `nginx/default.conf` : configuration nginx **partagée** par le service dev et l'image de prod
   (en-têtes CSP, X-Content-Type-Options…).
 - `Dockerfile.vercel` : source unique de l'image de prod, construite par le CI et déployée par Vercel.

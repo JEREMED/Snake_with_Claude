@@ -11,16 +11,17 @@
   <script type="module" src="main.js"></script>
 </head>
 <body>
+  <!-- Textes traduits par main.js : data-i18n (contenu), data-i18n-aria (aria-label). -->
   <main class="app">
     <header class="hud">
       <h1 class="logo">Snake</h1>
       <div class="scores">
         <div class="stat">
-          <span class="stat-label">Score</span>
+          <span class="stat-label" data-i18n="scoreLabel">Score</span>
           <span class="stat-value" id="score">0</span>
         </div>
         <div class="stat">
-          <span class="stat-label">Record</span>
+          <span class="stat-label" data-i18n="bestLabel">Record</span>
           <span class="stat-value best" id="best">0</span>
         </div>
       </div>
@@ -28,18 +29,32 @@
     </header>
 
     <div class="board" id="board">
-      <canvas id="canvas" aria-label="Plateau de jeu Snake" role="img"></canvas>
+      <canvas id="canvas" aria-label="Plateau de jeu Snake" role="img" data-i18n-aria="board"></canvas>
       <div class="overlay" id="overlay">
         <h2 class="overlay-title" id="overlay-title">Snake</h2>
         <p class="overlay-text" id="overlay-text">Appuie sur une flèche ou swipe pour commencer</p>
         <button class="btn" id="overlay-btn" type="button">Jouer</button>
+
+        <div class="settings">
+          <label class="setting">
+            <span data-i18n="difficulty">Difficulté</span>
+            <select id="difficulty">
+              <option value="normal" data-i18n="difficulty.normal">Normal</option>
+              <option value="fast" data-i18n="difficulty.fast">Rapide (×1,5)</option>
+              <option value="extreme" data-i18n="difficulty.extreme">Extrême (×3)</option>
+            </select>
+          </label>
+          <button class="chip-btn" id="lang-btn" type="button" lang="en"
+                  aria-label="Switch to English" data-i18n="switchLanguage"
+                  data-i18n-aria="switchLanguageLabel">English</button>
+        </div>
       </div>
     </div>
 
     <footer class="help">
-      <span><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> / <kbd>ZQSD</kbd> / <kbd>WASD</kbd> pour diriger</span>
-      <span><kbd>Espace</kbd> pause</span>
-      <span class="touch-only">Swipe pour diriger</span>
+      <span><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> / <kbd>ZQSD</kbd> / <kbd>WASD</kbd> <span data-i18n="helpSteer">pour diriger</span></span>
+      <span><kbd data-i18n="spaceKey">Espace</kbd> <span data-i18n="helpPause">pause</span></span>
+      <span class="touch-only" data-i18n="helpSwipe">Swipe pour diriger</span>
     </footer>
   </main>
 </body>

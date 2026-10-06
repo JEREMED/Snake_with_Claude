@@ -8,9 +8,14 @@ import {
   pause,
   step,
   tickInterval,
+  resolveDifficulty,
 } from './game.js';
+import { t, resolveLanguage, nextLanguage, DEFAULT_LANGUAGE } from './i18n.js';
+import { unlockAudio, playEat } from './sound.js';
 
 const BEST_KEY = 'snake.best';
+const LANG_KEY = 'snake.lang';
+const DIFFICULTY_KEY = 'snake.difficulty';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -22,27 +27,40 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayText = document.getElementById('overlay-text');
 const overlayBtn = document.getElementById('overlay-btn');
+const difficultySelect = document.getElementById('difficulty');
+const langBtn = document.getElementById('lang-btn');
 
-// --- Meilleur score (localStorage peut être indisponible : navigation privée, cookies bloqués…) ---
-function loadBest() {
+// --- Préférences (localStorage peut être indisponible : navigation privée, cookies bloqués…) ---
+function load(key) {
   try {
-    const n = Number.parseInt(localStorage.getItem(BEST_KEY) ?? '0', 10);
-    return Number.isFinite(n) && n > 0 ? n : 0;
+    return localStorage.getItem(key);
   } catch {
-    return 0;
+    return null;
   }
 }
 
-function saveBest(value) {
+function save(key, value) {
   try {
-    localStorage.setItem(BEST_KEY, String(value));
+    localStorage.setItem(key, String(value));
   } catch {
-    // Stockage indisponible : le record reste valable pour la session en cours.
+    // Stockage indisponible : la valeur reste valable pour la session en cours.
   }
+}
+
+function loadBest() {
+  const n = Number.parseInt(load(BEST_KEY) ?? '0', 10);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+// Langue enregistrée, sinon celle du navigateur, sinon le français.
+function loadLanguage() {
+  return resolveLanguage(load(LANG_KEY)) ?? resolveLanguage(navigator.language) ?? DEFAULT_LANGUAGE;
 }
 
 let state = createGame();
 let best = loadBest();
+let lang = loadLanguage();
+let difficulty = resolveDifficulty(load(DIFFICULTY_KEY));
 let lastScore = 0;
 let lastStatus = null;
 let accumulator = 0;
@@ -66,6 +84,36 @@ function steer(dir) {
   state = start(state);
 }
 
+// --- Langue ---
+function applyLanguage() {
+  document.documentElement.lang = lang;
+  for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(lang, el.dataset.i18n);
+  for (const el of document.querySelectorAll('[data-i18n-aria]')) {
+    el.setAttribute('aria-label', t(lang, el.dataset.i18nAria));
+  }
+  langBtn.lang = nextLanguage(lang); // le bouton affiche le nom de l'autre langue
+  lastStatus = null; // force syncUi à réécrire l'overlay et le bouton pause
+}
+
+langBtn.addEventListener('click', () => {
+  lang = nextLanguage(lang);
+  save(LANG_KEY, lang);
+  applyLanguage();
+  langBtn.blur(); // évite qu'Espace ne « clique » le bouton ensuite
+});
+
+// --- Difficulté : modifiable seulement hors partie (le menu est désactivé en jeu et en pause) ---
+difficultySelect.addEventListener('change', () => {
+  difficulty = resolveDifficulty(difficultySelect.value);
+  save(DIFFICULTY_KEY, difficulty);
+  difficultySelect.blur(); // les flèches doivent ensuite diriger le serpent
+});
+
+// --- Son : les navigateurs exigent une interaction avant d'autoriser l'audio ---
+for (const type of ['keydown', 'pointerdown', 'touchstart']) {
+  window.addEventListener(type, unlockAudio, { passive: true });
+}
+
 // --- Clavier ---
 const KEY_DIRS = {
   arrowup: 'up', arrowdown: 'down', arrowleft: 'left', arrowright: 'right',
@@ -75,6 +123,8 @@ const KEY_DIRS = {
 
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  // Le menu de difficulté garde ses propres touches (flèches, Espace, Entrée).
+  if (e.target === difficultySelect) return;
   const key = e.key.toLowerCase();
   const dir = KEY_DIRS[key];
   if (dir) {
@@ -309,35 +359,40 @@ function syncUi() {
   if (state.score > best) {
     best = state.score;
     bestEl.textContent = String(best);
-    saveBest(best);
+    save(BEST_KEY, best);
   }
 
   if (state.status === lastStatus) return;
   lastStatus = state.status;
 
-  pauseBtn.textContent = state.status === 'paused' ? '▶' : '❚❚';
-  pauseBtn.setAttribute('aria-label', state.status === 'paused' ? 'Reprendre' : 'Pause');
+  const paused = state.status === 'paused';
+  pauseBtn.textContent = paused ? '▶' : '❚❚';
+  pauseBtn.setAttribute('aria-label', t(lang, paused ? 'resume' : 'pause'));
+  // Pas de changement de vitesse en cours de partie.
+  difficultySelect.disabled = state.status === 'playing' || paused;
 
   switch (state.status) {
     case 'ready':
-      showOverlay('ready', 'Snake', 'Appuie sur une flèche, ZQSD/WASD, ou swipe pour commencer', 'Jouer');
+      showOverlay('ready', 'Snake', t(lang, 'readyText'), t(lang, 'play'));
       break;
     case 'paused':
-      showOverlay('paused', 'Pause', 'Espace ou le bouton pour reprendre', 'Reprendre');
+      showOverlay('paused', t(lang, 'pausedTitle'), t(lang, 'pausedText'), t(lang, 'resume'));
       break;
-    case 'over':
-      showOverlay('over', 'Game Over',
-        `Score : ${state.score}${state.score > 0 && state.score === best ? ' — nouveau record !' : ''}\nEspace ou Entrée pour rejouer`,
-        'Rejouer');
+    case 'over': {
+      const record = state.score > 0 && state.score === best ? t(lang, 'newRecord') : '';
+      showOverlay('over', t(lang, 'overTitle'),
+        `${t(lang, 'overScore', { score: state.score })}${record}\n${t(lang, 'overHint')}`,
+        t(lang, 'replay'));
       overlayBtn.focus({ preventScroll: true });
       break;
+    }
     case 'won':
-      showOverlay('won', 'Victoire !', `Grille remplie ! Score : ${state.score}`, 'Rejouer');
+      showOverlay('won', t(lang, 'wonTitle'), t(lang, 'wonText', { score: state.score }), t(lang, 'replay'));
       overlayBtn.focus({ preventScroll: true });
       break;
     default:
       overlay.className = 'overlay hidden';
-      if (document.activeElement === overlayBtn) overlayBtn.blur();
+      if (overlay.contains(document.activeElement)) document.activeElement.blur();
   }
 }
 
@@ -348,11 +403,13 @@ function frame(time) {
 
   if (state.status === 'playing') {
     accumulator += dt;
-    let interval = tickInterval(state.score);
+    let interval = tickInterval(state.score, difficulty);
     while (accumulator >= interval && state.status === 'playing') {
       accumulator -= interval;
+      const before = state.score;
       state = step(state);
-      interval = tickInterval(state.score);
+      if (state.score > before) playEat();
+      interval = tickInterval(state.score, difficulty);
     }
   } else {
     accumulator = 0;
@@ -364,5 +421,7 @@ function frame(time) {
 }
 
 bestEl.textContent = String(best);
+difficultySelect.value = difficulty;
+applyLanguage();
 resize();
 requestAnimationFrame(frame);

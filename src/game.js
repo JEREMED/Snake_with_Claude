@@ -13,6 +13,14 @@ export const SPEED_STEP = 10; // gain toutes les APPLES_PER_LEVEL pommes
 export const APPLES_PER_LEVEL = 5;
 export const MIN_INTERVAL = 60;
 
+// Niveaux de difficulté : multiplicateur de vitesse appliqué au mode « normal ».
+export const DIFFICULTIES = Object.freeze({
+  normal: 1,
+  fast: 1.5,
+  extreme: 3,
+});
+export const DEFAULT_DIFFICULTY = 'normal';
+
 export const DIRECTIONS = Object.freeze({
   up: Object.freeze({ x: 0, y: -1 }),
   down: Object.freeze({ x: 0, y: 1 }),
@@ -140,8 +148,17 @@ export function step(state, rng = Math.random) {
   };
 }
 
-/** Intervalle entre deux pas (ms) : un peu plus rapide toutes les 5 pommes. */
-export function tickInterval(score) {
+/**
+ * Intervalle entre deux pas (ms) : un peu plus rapide toutes les 5 pommes,
+ * puis divisé par le multiplicateur de la difficulté (inconnue → normale).
+ */
+export function tickInterval(score, difficulty = DEFAULT_DIFFICULTY) {
   const level = Math.floor(score / APPLES_PER_LEVEL);
-  return Math.max(MIN_INTERVAL, BASE_INTERVAL - level * SPEED_STEP);
+  const normal = Math.max(MIN_INTERVAL, BASE_INTERVAL - level * SPEED_STEP);
+  return normal / DIFFICULTIES[resolveDifficulty(difficulty)];
+}
+
+/** Ramène une valeur quelconque (ex. lue dans le localStorage) à une difficulté connue. */
+export function resolveDifficulty(value) {
+  return typeof value === 'string' && Object.hasOwn(DIFFICULTIES, value) ? value : DEFAULT_DIFFICULTY;
 }

@@ -8,6 +8,10 @@ Jeu Snake en 2D dans le navigateur : HTML, CSS, JavaScript (modules ES) et `<can
 - Grille 20x20, serpent en dégradé de vert, tête avec des yeux, pommes rouges.
 - Score et meilleur score (sauvegardé dans le `localStorage` du navigateur).
 - La vitesse augmente un peu toutes les 5 pommes.
+- Trois difficultés au choix (menu déroulant, hors partie) : Normal, Rapide (vitesse ×1,5) et Extrême (×3).
+- Interface en français ou en anglais (bouton dans le menu ; langue du navigateur par défaut).
+- Son à chaque pomme mangée, synthétisé avec la Web Audio API (aucun fichier audio).
+- Langue, difficulté et record sont mémorisés dans le `localStorage`.
 - Game Over en cas de collision avec un mur ou avec soi-même ; victoire si la grille est pleine.
 - Contrôles : flèches, ZQSD, WASD ; `Espace` = pause ; swipe sur mobile.
   Le demi-tour instantané est interdit et les changements rapides sont mis en file.
@@ -95,10 +99,13 @@ src/
   index.html     page du jeu
   style.css      thème sombre, responsive
   game.js        logique pure (sans DOM), testable
-  main.js        rendu canvas, boucle de jeu, clavier / tactile
+  main.js        rendu canvas, boucle de jeu, clavier / tactile, préférences
+  i18n.js        textes français / anglais (module pur)
+  sound.js       effets sonores (Web Audio API)
   favicon.svg
 tests/
-  game.test.js   tests node:test
+  game.test.js   tests node:test de la logique
+  i18n.test.js   tests des traductions
 nginx/
   default.conf   conf nginx commune au dev et à la prod
 docker-compose.yml   services dev (nginx) et test (node, profil « test »)
