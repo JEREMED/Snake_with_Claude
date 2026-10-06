@@ -77,7 +77,7 @@ Les pull requests exécutent `tests` et `image`, sans déployer. Le workflow peu
 | Secret              | Origine                                                                 |
 |---------------------|-------------------------------------------------------------------------|
 | `VERCEL_TOKEN`      | vercel.com → *Account Settings → Tokens*                                |
-| `VERCEL_ORG_ID`     | `orgId` de `.vercel/project.json`, créé par `vercel link`               |
+| `VERCEL_ORG_ID`     | `orgId` de `.vercel/project.json` (créé par `vercel link`) : **Team ID** (`team_…`) si le projet appartient à une équipe, User ID (`user_…`) seulement pour un projet personnel |
 | `VERCEL_PROJECT_ID` | `projectId` du même fichier                                             |
 
 `vercel link` peut être lancé sans rien installer :
