@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1420">
+  <title>Snake</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <!-- Aucun script ni style inline : la CSP n'autorise que 'self'. -->
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header class="hud">
+      <h1 class="logo">Snake</h1>
+      <div class="scores">
+        <div class="stat">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Record</span>
+          <span class="stat-value best" id="best">0</span>
+        </div>
+      </div>
+      <button class="icon-btn" id="pause-btn" type="button" aria-label="Pause">❚❚</button>
+    </header>
+
+    <div class="board" id="board">
+      <canvas id="canvas" aria-label="Plateau de jeu Snake" role="img"></canvas>
+      <div class="overlay" id="overlay">
+        <h2 class="overlay-title" id="overlay-title">Snake</h2>
+        <p class="overlay-text" id="overlay-text">Appuie sur une flèche ou swipe pour commencer</p>
+        <button class="btn" id="overlay-btn" type="button">Jouer</button>
+      </div>
+    </div>
+
+    <footer class="help">
+      <span><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> / <kbd>ZQSD</kbd> / <kbd>WASD</kbd> pour diriger</span>
+      <span><kbd>Espace</kbd> pause</span>
+      <span class="touch-only">Swipe pour diriger</span>
+    </footer>
+  </main>
+</body>
+</html>

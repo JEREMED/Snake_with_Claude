@@ -1,0 +1,6 @@
+{
+  "name": "snake",
+  "private": true,
+  "type": "module",
+  "description": "Indique à Node (conteneur de test) que les .js sont des modules ES. Aucune dépendance."
+}

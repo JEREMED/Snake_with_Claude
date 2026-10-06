@@ -1,0 +1,13 @@
+# Dépendances (aucune attendue, par précaution)
+node_modules/
+
+# Système / éditeurs
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Fichiers locaux
+*.log
+.env

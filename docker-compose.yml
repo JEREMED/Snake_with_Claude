@@ -1,0 +1,25 @@
+# Environnements de développement et de test. Rien n'est installé sur l'hôte.
+services:
+  # Serveur de dev : sert ./src en lecture seule, avec la même conf nginx que la prod.
+  # Recharger la page dans le navigateur suffit pour voir les modifications.
+  dev:
+    image: nginx:1.31.6-alpine3.24
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./src:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+  # Tests unitaires de la logique (node:test, aucune dépendance).
+  # Lancement : docker compose run --rm test
+  test:
+    image: node:22.23.3-alpine3.24
+    profiles: ["test"]
+    user: node
+    working_dir: /app
+    volumes:
+      - ./package.json:/app/package.json:ro
+      - ./src:/app/src:ro
+      - ./tests:/app/tests:ro
+    # Node 22 n'accepte pas un répertoire seul : on passe un motif glob (interprété par Node).
+    command: ["node", "--test", "tests/**/*.test.js"]

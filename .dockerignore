@@ -1,0 +1,4 @@
+# Contexte de build minimal : seuls la conf nginx et les sources du jeu sont nécessaires.
+*
+!nginx/
+!src/
