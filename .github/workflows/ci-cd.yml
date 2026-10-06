@@ -82,6 +82,7 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
     env:
       VERCEL_CLI_VERSION: 62.4.0
+      VERCEL_TELEMETRY_DISABLED: "1"
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
@@ -100,12 +101,16 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          # stdout contient uniquement l'URL du déploiement ; la progression part sur stderr.
-          url="$(vercel deploy --prod --yes --token "$VERCEL_TOKEN" | tail -n 1)"
-          case "$url" in
-            https://*) ;;
-            *) echo "::error::URL de déploiement inattendue : $url"; exit 1 ;;
-          esac
+          # Pas de pipe : l'étape tourne sous `sh -e` sans pipefail, un pipe masquerait
+          # l'échec de vercel. stdout contient l'URL ; la progression part sur stderr.
+          vercel deploy --prod --yes --token "$VERCEL_TOKEN" > vercel-stdout.txt
+          echo "--- stdout de vercel ---"
+          cat vercel-stdout.txt
+          url="$(grep -Eo 'https://[^[:space:]]+' vercel-stdout.txt | tail -n 1 || true)"
+          if [ -z "$url" ]; then
+            echo "::error::Aucune URL de déploiement dans la sortie de vercel"
+            exit 1
+          fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Smoke test
