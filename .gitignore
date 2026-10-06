@@ -11,3 +11,6 @@ Thumbs.db
 # Fichiers locaux
 *.log
 .env
+
+# Liaison locale au projet Vercel (créée par `vercel link`)
+.vercel/

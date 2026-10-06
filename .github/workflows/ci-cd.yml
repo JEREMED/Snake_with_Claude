@@ -1,0 +1,126 @@
+# Chaîne CI/CD : tests + image de prod sur chaque push / PR, déploiement Vercel sur push vers main.
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Une seule exécution par branche. On n'annule que les PR : un déploiement de prod
+# en cours ne doit jamais être interrompu.
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  tests:
+    name: Tests unitaires
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Tests (node:test dans Docker)
+        run: docker compose run --rm test
+
+  image:
+    name: Image de production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Build de Dockerfile.vercel
+        run: docker build -f Dockerfile.vercel -t snake:ci .
+
+      - name: Démarrage du conteneur
+        run: docker run -d --name snake-ci -p 8080:8080 snake:ci
+
+      - name: La page répond avec les en-têtes de sécurité
+        run: |
+          curl -fsS --retry 10 --retry-delay 1 --retry-all-errors -D headers.txt -o page.html http://localhost:8080/
+          grep -q '<title>Snake</title>' page.html
+          grep -qi '^content-security-policy:' headers.txt
+          grep -qi '^x-content-type-options: nosniff' headers.txt
+
+      - name: Le conteneur ne tourne pas en root
+        run: |
+          uid="$(docker exec snake-ci id -u)"
+          echo "uid du conteneur : $uid"
+          test "$uid" != 0
+          # Aucun processus nginx (maître compris) ne doit appartenir à root.
+          # (uid numérique : les noms affichés sont ceux de l'hôte, pas du conteneur.)
+          docker top snake-ci -o uid,pid,args | tee processus.txt
+          if awk 'NR > 1 && $1 == 0 { trouve = 1 } END { exit !trouve }' processus.txt; then
+            echo "::error::Un processus du conteneur tourne en root"
+            exit 1
+          fi
+
+      - name: Journaux du conteneur
+        if: always()
+        run: docker logs snake-ci || true
+
+  deploy:
+    name: Déploiement Vercel
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [tests, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: node:22.23.3-alpine3.24
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_CLI_VERSION: 62.4.0
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Outils (curl, CLI Vercel à version figée)
+        run: |
+          apk add --no-cache curl
+          npm install --global --no-fund --no-audit "vercel@${VERCEL_CLI_VERSION}"
+          vercel --version
+
+      - name: Déploiement en production
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          # stdout contient uniquement l'URL du déploiement ; la progression part sur stderr.
+          url="$(vercel deploy --prod --yes --token "$VERCEL_TOKEN" | tail -n 1)"
+          case "$url" in
+            https://*) ;;
+            *) echo "::error::URL de déploiement inattendue : $url"; exit 1 ;;
+          esac
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          curl -fsS --retry 10 --retry-delay 5 --retry-all-errors -o page.html "$URL/"
+          grep -q '<title>Snake</title>' page.html
+
+      - name: Résumé
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          {
+            echo "## Déploiement Vercel"
+            echo
+            echo "Production : $URL"
+          } >> "$GITHUB_STEP_SUMMARY"

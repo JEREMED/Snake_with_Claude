@@ -9,6 +9,8 @@
 - **Langue** : commentaires, messages de commit et documentation en français.
 - **Production** : le conteneur tourne en utilisateur non-root (image nginx-unprivileged).
 - **Images Docker figées** : toujours un tag de version exact, jamais `latest` ni `alpine` seul.
+- **Jamais de secret dans le code ni dans les commits** (tokens, clés SSH, `.env`, `.vercel/`) :
+  les identifiants de déploiement vivent uniquement dans les secrets GitHub Actions.
 
 ## Architecture
 
@@ -19,11 +21,14 @@
 - `tests/game.test.js` : tests `node:test`, sans dépendance.
 - `nginx/default.conf` : configuration nginx **partagée** par le service dev et l'image de prod
   (en-têtes CSP, X-Content-Type-Options…).
+- `Dockerfile.vercel` : source unique de l'image de prod, construite par le CI et déployée par Vercel.
+- `vercel.json` : déploiements Git de Vercel désactivés, seul le CI déploie.
+- `.github/workflows/ci-cd.yml` : tests → image → déploiement Vercel (push sur `main`).
 
 ## Commandes
 
 ```sh
 docker compose run --rm test        # tests
 docker compose up -d dev            # serveur de dev → http://localhost:8080
-docker build -t snake:prod .        # image de production
+docker build -f Dockerfile.vercel -t snake:prod .   # image de production (déployée par Vercel)
 ```
