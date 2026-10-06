@@ -84,7 +84,9 @@ Les pull requests exécutent `tests` et `image`, sans déployer. Le workflow peu
 `docker run --rm -it -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/app" -w /app node:22.23.3-alpine3.24 npx --yes vercel@62.4.0 link`.
 Le dossier `.vercel/` est ignoré par Git ; aucun secret ne doit être commité.
 
-Côté Vercel, le projet doit définir la variable `PORT=8080` (l'image écoute sur 8080 en non-root).
+Côté Vercel, le projet doit avoir le *Framework Preset* **Container** (sinon le dépôt est publié en
+site statique et la page renvoie 404) et définir la variable `PORT=8080` (l'image écoute sur 8080
+en non-root).
 
 ## Structure
 
